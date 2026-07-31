@@ -203,7 +203,12 @@ end)
 
 AFKNotifier:GetPropertyChangedSignal("Visible"):Connect(function()
     if AFKNotifier.Visible then
-        queueonteleport(game:HttpGet("url"))
+        queueonteleport(game:HttpGet("https://raw.githubusercontent.com/LuvNarcc/Tools/refs/heads/main/AssassinBoost"))
+
+        task.wait(1)
+
+        -- rejoin the game here
+
     end
 end)
 
