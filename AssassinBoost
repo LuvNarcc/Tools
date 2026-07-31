@@ -1,0 +1,212 @@
+getgenv().Farmer = "1uvnarc"
+
+
+local Internal = {}
+
+local S = setmetatable({}, {
+    __index = function(t, k)
+        local ok, svc = pcall(function() return game:GetService(k) end)
+        local v = ok and svc or nil
+        rawset(t, k, v)
+        return v
+    end
+})
+
+local Player = S.Players.LocalPlayer
+local TargetFrame = Player.PlayerGui.ScreenGui:FindFirstChild("UI"):FindFirstChild("Target")
+local AFKNotifier = Player.PlayerGui.ScreenGui:FindFirstChild("UI"):FindFirstChild("AFKNotifier")
+
+function Internal:AltMode(v)
+    local Overlay = game.CoreGui:FindFirstChild("AltOverlay")
+
+    if not Overlay then
+        local Ins = {
+            AltOverlay = Instance.new("ScreenGui"),
+            Frame = Instance.new("Frame"),
+            Top = Instance.new("TextLabel"),
+            Bottom = Instance.new("TextLabel"),
+            Icon = Instance.new("ImageLabel"),
+            UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+        }
+
+        Ins.AltOverlay.Name = "AltOverlay"
+        Ins.AltOverlay.Parent = game.CoreGui
+        Ins.AltOverlay.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        Ins.AltOverlay.ResetOnSpawn = false
+		Ins.AltOverlay.IgnoreGuiInset = true
+		Ins.AltOverlay.ScreenInsets = "None"
+
+        Ins.Frame.Name = "Frame"
+        Ins.Frame.Parent = Ins.AltOverlay
+        Ins.Frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+        Ins.Frame.BorderColor3 = Color3.fromRGB(20, 20, 20)
+        Ins.Frame.BorderSizePixel = 0
+        Ins.Frame.Size = UDim2.new(1, 0, 1, 0)
+
+        Ins.Top.Name = "Top"
+        Ins.Top.Parent = Ins.Frame
+        Ins.Top.AnchorPoint = Vector2.new(0.5, 0.5)
+        Ins.Top.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Ins.Top.BackgroundTransparency = 1.000
+        Ins.Top.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Ins.Top.BorderSizePixel = 0
+        Ins.Top.Position = UDim2.new(0.499515504, 0, 0.498810977, 0)
+        Ins.Top.Size = UDim2.new(0.499806255, 0, 0.0714625493, 0)
+        Ins.Top.Font = Enum.Font.SourceSans
+        Ins.Top.Text = "3D Rendering has been disabled"
+        Ins.Top.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Ins.Top.TextScaled = true
+        Ins.Top.TextSize = 14.000
+        Ins.Top.TextWrapped = true
+
+        Ins.Bottom.Name = "Bottom"
+        Ins.Bottom.Parent = Ins.Frame
+        Ins.Bottom.AnchorPoint = Vector2.new(0.5, 0.5)
+        Ins.Bottom.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Ins.Bottom.BackgroundTransparency = 1.000
+        Ins.Bottom.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Ins.Bottom.BorderSizePixel = 0
+        Ins.Bottom.Position = UDim2.new(0.499515504, 0, 0.556480467, 0)
+        Ins.Bottom.Size = UDim2.new(0.499806255, 0, 0.0441141538, 0)
+        Ins.Bottom.Font = Enum.Font.SourceSans
+        Ins.Bottom.Text = "This is to preserve resources"
+        Ins.Bottom.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Ins.Bottom.TextScaled = true
+        Ins.Bottom.TextSize = 14.000
+        Ins.Bottom.TextWrapped = true
+
+        Ins.Icon.Name = "Icon"
+        Ins.Icon.Parent = Ins.Frame
+        Ins.Icon.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Ins.Icon.BackgroundTransparency = 1.000
+        Ins.Icon.BorderColor3 = Color3.fromRGB(0, 0, 0)
+        Ins.Icon.BorderSizePixel = 0
+        Ins.Icon.Position = UDim2.new(0.458333343, 0, 0.362663507, 0)
+        Ins.Icon.Size = UDim2.new(0.100000001, 0, 0.100000001, 0)
+        Ins.Icon.Image = "rbxassetid://6034457070"
+
+        Ins.UIAspectRatioConstraint.Name = "UIAspectRatioConstraint"
+        Ins.UIAspectRatioConstraint.Parent = Ins.Icon
+
+        Overlay = Ins.AltOverlay
+    end
+
+    Overlay.Enabled = v
+
+    pcall(function()
+		game.RunService:Set3dRenderingEnabled(not v)
+    end)
+end
+
+
+function Internal:OrbitFarmer(v)
+
+    if not v then
+
+        if Internal.OrbitCon then Internal.OrbitCon:Disconnect() ; Internal.OrbitCon = nil end
+
+        return
+
+    else
+
+        if Internal.OrbitCon then Internal.OrbitCon:Disconnect() ; Internal.OrbitCon = nil end
+
+        local FarmerPlayer = S.Players:FindFirstChild(Farmer)
+
+        if not FarmerPlayer then return end
+
+        Internal.OrbitAngle = 0
+
+        Internal.OrbitCon = S.RunService.RenderStepped:Connect(function(dt)
+
+            local Character = S.Workspace[Player.Name]
+            local FarmerCharacter = S.Workspace[FarmerPlayer.Name]
+
+            if not Character or not FarmerCharacter then return end
+
+            local Root = Character:FindFirstChild("HumanoidRootPart")
+            local FarmerRoot = FarmerCharacter:FindFirstChild("HumanoidRootPart")
+            local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+
+            if not Root or not FarmerRoot or not Humanoid then print(3) return end
+
+            if Humanoid.Health <= 0 then
+                Internal:OrbitFarmer(false)
+                return
+            end
+
+            if not TargetFrame.Visible then
+                Internal:OrbitFarmer(false)
+                return
+            end
+
+            Internal.OrbitAngle += math.rad(120) * dt
+
+            local Offset = Vector3.new(
+                math.cos(Internal.OrbitAngle) * 4,
+                0,
+                math.sin(Internal.OrbitAngle) * 4
+            )
+
+            local Position = FarmerRoot.Position + Offset
+
+            Root.CFrame = CFrame.lookAt(Position, FarmerRoot.Position)
+
+        end)
+
+    end
+
+end
+
+function Internal:IsFarmer()
+    return getgenv().Farmer == S.Player.Name and true or false
+end
+
+function Internal:StartKnifePoll(v)
+    if not v and Internal.KnifePoll then Internal.KnifePoll:Disconnect() ; Internal.KnifePoll = nil return end
+
+    if v and not Internal.KnifePoll then
+
+        Internal.KnifePoll = S.RunService.Stepped:Connect(function()
+            if Player.Character and not StabCooldown and TargetFrame.Visible then
+
+                if Player:DistanceFromCharacter(S.Workspace[TargetFrane.TargetText.Text].Head.Position) <= 6.5 then
+                    Player.PlayerScripts.localknifehandler.HitCheck:Fire(S.Workspace[TargetFrame.TargetText.Text])
+
+                    coroutine.wrap(function()
+                        StabCooldown = true
+                        task.wait(0.725)
+                        StabCooldown = false
+                    end)()
+
+                else
+
+                    task.wait()
+
+                end
+
+            end
+        end)
+
+    else
+
+        Internal.KnifePoll:Disconnect() ; Internal.KnifePoll = nil
+
+    end
+end
+
+TargetFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+
+    Internal:OrbitFarmer(TargetFrame.Visible)
+
+end)
+
+AFKNotifier:GetPropertyChangedSignal("Visible"):Connect(function()
+    if AFKNotifier.Visible then
+        queueonteleport(game:HttpGet("url"))
+    end
+end)
+
+if Internal:IsFarmer() then Internal:StartKnifePoll(true) end
+if TargetFrame.Visible then Internal:OrbitFarmer(TargetFrame.Visible) end
+if not Internal:IsFarmer() then Internal:AltMode(true) end
